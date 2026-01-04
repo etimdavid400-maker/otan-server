@@ -1,19 +1,26 @@
 import Blog from "../models/blogModel.js";
 
-// Create a new blog with selected image
+// Create a new blog
 export const createBlog = async (req, res) => {
   try {
     const { title, content, link, selectedImage } = req.body;
 
-    if (!title || !content || !selectedImage) {
-      return res.status(400).json({ message: "Title, content, and image are required" });
+    if (!title || !content) {
+      return res.status(400).json({ message: "Title and content are required" });
     }
+
+    // ✅ Ensure image always has full URL
+    const imageUrl = selectedImage
+      ? selectedImage.startsWith("http")
+        ? selectedImage
+        : `${process.env.VITE_API_URL}${selectedImage}`
+      : `${process.env.VITE_API_URL}/blog-images/image1.jpg`; // fallback
 
     const blog = await Blog.create({
       title,
       content,
       link: link || "",
-      image: selectedImage, // ✅ store the full URL directly
+      image: imageUrl,
     });
 
     res.status(201).json({ message: "Blog created successfully", blog });
