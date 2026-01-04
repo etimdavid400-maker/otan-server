@@ -21,7 +21,6 @@ app.use(express.json());
 /* -------------------- Static Files -------------------- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* -------------------- Database -------------------- */
@@ -38,14 +37,8 @@ app.use("/api/admin", adminRoutes);
 
 /* -------------------- Health Check -------------------- */
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "OTAN backend is running 🚀",
-  });
+  res.status(200).json({ success: true, message: "OTAN backend is running 🚀" });
 });
 
-/* -------------------- IMPORTANT -------------------- */
-/* ❌ DO NOT use app.listen() on Vercel */
-/* ✅ Export the app instead */
-
+/* -------------------- Export App for Vercel -------------------- */
 export default app;
