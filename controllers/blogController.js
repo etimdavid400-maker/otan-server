@@ -22,7 +22,7 @@ export const createBlog = async (req, res) => {
 
     // Ensure the image is saved with full public URL
     const imageUrl = selectedImage
-      ? `https://otan-server.vercel.app/public/${selectedImage.replace(/^\/+/, "")}`
+      ? `https://otan-server.vercel.app/blog-images/${selectedImage.replace(/^\/+/, "")}`
       : ""; // fallback empty string
 
     const blog = await Blog.create({
