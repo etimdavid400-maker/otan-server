@@ -6,7 +6,7 @@ const blogSchema = new mongoose.Schema(
     title: { type: String, required: true },
     content: { type: String, required: true },
     link: { type: String }, // external link
-    image: { type: String }, // supabase image URL
+    image: { type: String }, // firebase image URL
   },
   { timestamps: true }
 );
