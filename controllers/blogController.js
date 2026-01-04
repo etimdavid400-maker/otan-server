@@ -1,60 +1,57 @@
 import Blog from "../models/blogModel.js";
 
-/* -------------------- Create Blog -------------------- */
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://wind-ebon.vercel.app";
+
+// Create a new blog
 export const createBlog = async (req, res) => {
   try {
     const { title, content, link, selectedImage } = req.body;
 
-    if (!title || !content || !selectedImage) {
-      return res.status(400).json({ message: "Title, content, and image are required" });
+    if (!title || !content) {
+      return res.status(400).json({ message: "Title and content are required" });
     }
 
-    // Ensure selectedImage is a valid option from public folder
-    const allowedImages = [
-      "/public/image1.jpg",
-      "/public/image2.jpg",
-      "/public/image3.jpg",
-      "/public/image4.jpg",
-      "/public/image5.jpg",
-    ];
+    // Use selected image from public folder
+    // Remove "/public" if admin sent it
+    const cleanImage = selectedImage
+      ? selectedImage.replace(/^\/?public/, "")
+      : "/image1.jpg"; // default
 
-    if (!allowedImages.includes(selectedImage)) {
-      return res.status(400).json({ message: "Invalid image selection" });
-    }
+    // Build full URL for production so mobile can load
+    const imageUrl = `${FRONTEND_URL}${cleanImage.startsWith("/") ? "" : "/"}${cleanImage}`;
 
     const blog = await Blog.create({
       title,
       content,
       link: link || "",
-      image: selectedImage,
+      image: imageUrl,
     });
 
     res.status(201).json({ message: "Blog created successfully", blog });
   } catch (err) {
     console.error("Blog create error:", err);
-    res.status(500).json({ message: "Server error while creating blog" });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-/* -------------------- Get All Blogs -------------------- */
+// Get all blogs
 export const getBlogs = async (req, res) => {
   try {
     const blogs = await Blog.find().sort({ createdAt: -1 });
-    res.json(Array.isArray(blogs) ? blogs : []);
+    res.json(blogs);
   } catch (err) {
-    console.error("Error fetching blogs:", err);
-    res.status(500).json({ message: "Server error while fetching blogs" });
+    console.error("Get blogs error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-/* -------------------- Delete Blog -------------------- */
+// Delete blog
 export const deleteBlog = async (req, res) => {
   try {
-    const blog = await Blog.findByIdAndDelete(req.params.id);
-    if (!blog) return res.status(404).json({ message: "Blog not found" });
-    res.json({ message: "Blog deleted successfully" });
+    await Blog.findByIdAndDelete(req.params.id);
+    res.json({ message: "Blog deleted" });
   } catch (err) {
-    console.error("Error deleting blog:", err);
-    res.status(500).json({ message: "Server error while deleting blog" });
+    console.error("Delete blog error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
