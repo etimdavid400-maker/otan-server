@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 
-/* -------------------- CORS (VERCEL SAFE) -------------------- */
+/* -------------------- CORS -------------------- */
 app.use(
   cors({
     origin: [
@@ -27,9 +27,6 @@ app.use(
   })
 );
 
-// Handle preflight requests
-app.options("*", cors());
-
 /* -------------------- Middleware -------------------- */
 app.use(express.json());
 
@@ -37,7 +34,7 @@ app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// If you serve images like /public/blog-images/xxx.jpg
+// Serve images from /public
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* -------------------- Database -------------------- */
@@ -60,8 +57,11 @@ app.get("/", (req, res) => {
   });
 });
 
-/* -------------------- IMPORTANT FOR VERCEL -------------------- */
-/* ❌ DO NOT use app.listen() */
-/* ✅ Export app */
+/* -------------------- Global Error Handler -------------------- */
+app.use((err, req, res, next) => {
+  console.error("🔥 ERROR:", err);
+  res.status(500).json({ success: false, message: err.message });
+});
 
+/* -------------------- Export app for Vercel -------------------- */
 export default app;
