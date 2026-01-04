@@ -1,6 +1,9 @@
 import Blog from "../models/blogModel.js";
 
-// Create a new blog
+// Make sure you have BACKEND_URL in your .env
+const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
+
+// Create a new blog with optional predefined image
 export const createBlog = async (req, res) => {
   try {
     const { title, content, link, selectedImage } = req.body;
@@ -9,14 +12,16 @@ export const createBlog = async (req, res) => {
       return res.status(400).json({ message: "Title and content are required" });
     }
 
-    // Only store the path relative to the public folder
-    const imagePath = selectedImage ? `blog-images/${selectedImage}` : "blog-images/default.jpg";
+    // Build full image URL for global access
+    const imageUrl = selectedImage
+      ? `${BASE_URL}/public/${selectedImage}`
+      : `${BASE_URL}/public/image1.jpg`; // default image
 
     const blog = await Blog.create({
       title,
       content,
       link: link || "",
-      image: imagePath,
+      image: imageUrl,
     });
 
     res.status(201).json({ message: "Blog created successfully", blog });
@@ -30,14 +35,7 @@ export const createBlog = async (req, res) => {
 export const getBlogs = async (req, res) => {
   try {
     const blogs = await Blog.find().sort({ createdAt: -1 });
-
-    // For frontend convenience, prepend `/` to image paths
-    const blogsWithFullPath = blogs.map((b) => ({
-      ...b._doc,
-      imageUrl: `/${b.image}`, 
-    }));
-
-    res.json(blogsWithFullPath);
+    res.json(blogs);
   } catch (err) {
     console.error("Get blogs error:", err);
     res.status(500).json({ message: "Server error" });
