@@ -4,8 +4,8 @@ const blogSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     content: { type: String, required: true },
-    link: { type: String },        // external link (optional)
-    image: { type: String },       // URL to public image or Firebase (future)
+    link: { type: String, default: "" },
+    image: { type: String, default: "" }, // FULL URL
   },
   { timestamps: true }
 );
