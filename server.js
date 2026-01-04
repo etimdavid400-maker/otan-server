@@ -5,6 +5,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// Routes
 import contactRoutes from "./routes/contactRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -14,27 +15,20 @@ dotenv.config();
 
 const app = express();
 
-/* -------------------- CORS Setup -------------------- */
-const allowedOrigins = [
-  "https://wind-ebon.vercel.app", // deployed frontend
-  "http://localhost:5173",        // local dev
-];
-
+/* -------------------- CORS (VERCEL SAFE) -------------------- */
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
+    origin: [
+      "https://wind-ebon.vercel.app", // production frontend
+      "http://localhost:5173",        // local dev
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
 
+// Handle preflight requests
+app.options("*", cors());
 
 /* -------------------- Middleware -------------------- */
 app.use(express.json());
@@ -43,6 +37,7 @@ app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// If you serve images like /public/blog-images/xxx.jpg
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* -------------------- Database -------------------- */
@@ -65,8 +60,8 @@ app.get("/", (req, res) => {
   });
 });
 
-/* -------------------- IMPORTANT -------------------- */
-/* ❌ DO NOT use app.listen() on Vercel */
-/* ✅ Export the app instead */
+/* -------------------- IMPORTANT FOR VERCEL -------------------- */
+/* ❌ DO NOT use app.listen() */
+/* ✅ Export app */
 
 export default app;
