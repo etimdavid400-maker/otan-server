@@ -1,7 +1,5 @@
 import Blog from "../models/blogModel.js";
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://wind-ebon.vercel.app";
-
 // Create a new blog
 export const createBlog = async (req, res) => {
   try {
@@ -11,20 +9,14 @@ export const createBlog = async (req, res) => {
       return res.status(400).json({ message: "Title and content are required" });
     }
 
-    // Use selected image from public folder
-    // Remove "/public" if admin sent it
-    const cleanImage = selectedImage
-      ? selectedImage.replace(/^\/?public/, "")
-      : "/image1.jpg"; // default
-
-    // Build full URL for production so mobile can load
-    const imageUrl = `${FRONTEND_URL}${cleanImage.startsWith("/") ? "" : "/"}${cleanImage}`;
+    // Only store the path relative to the public folder
+    const imagePath = selectedImage ? `blog-images/${selectedImage}` : "blog-images/default.jpg";
 
     const blog = await Blog.create({
       title,
       content,
       link: link || "",
-      image: imageUrl,
+      image: imagePath,
     });
 
     res.status(201).json({ message: "Blog created successfully", blog });
@@ -38,7 +30,14 @@ export const createBlog = async (req, res) => {
 export const getBlogs = async (req, res) => {
   try {
     const blogs = await Blog.find().sort({ createdAt: -1 });
-    res.json(blogs);
+
+    // For frontend convenience, prepend `/` to image paths
+    const blogsWithFullPath = blogs.map((b) => ({
+      ...b._doc,
+      imageUrl: `/${b.image}`, 
+    }));
+
+    res.json(blogsWithFullPath);
   } catch (err) {
     console.error("Get blogs error:", err);
     res.status(500).json({ message: "Server error" });
