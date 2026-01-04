@@ -29,8 +29,12 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
+    methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
+
 
 /* -------------------- Middleware -------------------- */
 app.use(express.json());
