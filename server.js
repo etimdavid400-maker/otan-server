@@ -1,74 +1,73 @@
 import express from "express";
-import { connectDB } from "./config/db.js";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+
 import contactRoutes from "./routes/contactRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 
-/* -------------------- APP CREATION -------------------- */
-const createApp = () => {
-  const app = express();
+dotenv.config();
 
-  // Body parser
-  app.use(express.json());
+const app = express();
 
-  // CORS
-  const allowedOrigins = [
-    "https://wind-ebon.vercel.app",
-    "http://localhost:5173",
-  ];
-  app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-    );
-    if (req.method === "OPTIONS") {
-      res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, PATCH, DELETE"
-      );
-      return res.sendStatus(200);
-    }
-    next();
-  });
+// CORS
+app.use(
+  cors({
+    origin: ["https://wind-ebon.vercel.app", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-  // Request logging
-  app.use((req, res, next) => {
-    console.log(`➡️ ${req.method} ${req.url}`);
-    next();
-  });
+// Body parser
+app.use(express.json());
 
-  // Routes
-  app.use("/api/contact", contactRoutes);
-  app.use("/api/blogs", blogRoutes);
+// __dirname fix for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  // Test route
-  app.get("/api/test", (req, res) => {
-    console.log("✅ Test route hit");
-    res.json({ success: true, message: "OTAN backend running 🚀" });
-  });
+// Serve static public folder
+app.use("/public", express.static(path.join(__dirname, "public")));
 
-  return app;
-};
+// -----------------------------
+// MongoDB connection (Vercel-friendly)
+// -----------------------------
+let cached = global.mongoose;
 
-/* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
-let cachedApp = null;
-
-export default async function handler(req, res) {
-  try {
-    // Connect to MongoDB (cached)
-    await connectDB(process.env.MONGO_URI);
-
-    // Initialize Express app once
-    if (!cachedApp) {
-      cachedApp = createApp();
-    }
-
-    cachedApp(req, res); // Pass request to Express
-  } catch (error) {
-    console.error("❌ Serverless function error:", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
+
+async function connectToDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }).then((m) => m);
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+// Connect once at startup
+connectToDB()
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// -----------------------------
+// Routes
+// -----------------------------
+app.use("/api/contact", contactRoutes);
+app.use("/api/blogs", blogRoutes);
+
+// Test endpoint
+app.get("/", (req, res) =>
+  res.json({ success: true, message: "OTAN backend running 🚀" })
+);
+
+export default app;
