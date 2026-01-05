@@ -29,7 +29,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* -------------------- STATIC FILES -------------------- */
-// Serve /public folder (for images, etc.)
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* -------------------- MONGODB CONNECTION (CACHED) -------------------- */
@@ -67,7 +66,7 @@ app.get("/", (req, res) =>
 /* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
 export default async function handler(req, res) {
   try {
-    await connectToDB(); // ensure DB connected per request (cached)
+    await connectToDB(); // ensure DB connected per request
     app(req, res); // pass request to Express
   } catch (err) {
     console.error("❌ Serverless function error:", err.message);
