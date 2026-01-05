@@ -10,7 +10,7 @@ dotenv.config();
 
 const app = express();
 
-/* -------------------- CORS -------------------- */
+// CORS
 app.use(
   cors({
     origin: ["https://wind-ebon.vercel.app", "http://localhost:5173"],
@@ -19,45 +19,46 @@ app.use(
   })
 );
 
-/* -------------------- BODY PARSER -------------------- */
+// Body parser
 app.use(express.json());
 
-/* -------------------- MONGODB CONNECTION (CACHED) -------------------- */
+// -----------------------------
+// MongoDB connection (Vercel-safe)
 let cached = global.mongoose;
 if (!cached) cached = global.mongoose = { conn: null, promise: null };
 
 async function connectToDB() {
   if (cached.conn) return cached.conn;
-
   if (!cached.promise) {
     cached.promise = mongoose
       .connect(process.env.MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
       })
-      .then((m) => m);
+      .then((mongoose) => mongoose);
   }
-
   cached.conn = await cached.promise;
   return cached.conn;
 }
 
-/* -------------------- ROUTES -------------------- */
+// Middleware to ensure DB is connected for every request
+app.use(async (req, res, next) => {
+  try {
+    await connectToDB();
+    next();
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
+    return res.status(500).json({ message: "Database connection failed", error: err.message });
+  }
+});
+
+// Routes
 app.use("/api/contact", contactRoutes);
 app.use("/api/blogs", blogRoutes);
 
-/* -------------------- TEST ENDPOINT -------------------- */
-app.get("/", (req, res) =>
-  res.json({ success: true, message: "OTAN backend running 🚀" })
-);
+// Test endpoint
+app.get("/", (req, res) => {
+  res.json({ success: true, message: "OTAN backend running 🚀" });
+});
 
-/* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
-export default async function handler(req, res) {
-  try {
-    await connectToDB(); // Ensure MongoDB is connected
-    app(req, res);        // Pass request to Express
-  } catch (err) {
-    console.error("❌ Serverless function error:", err.message);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-}
+export default app;

@@ -3,7 +3,6 @@ import {
   createBlog,
   getBlogs,
   deleteBlog,
-  updateBlog
 } from "../controllers/blogController.js";
 
 const router = express.Router();
