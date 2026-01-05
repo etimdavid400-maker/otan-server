@@ -20,22 +20,28 @@ const allowedOrigins = [
   "http://localhost:5173"
 ];
 
+// Universal CORS middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
+  // Allow only requests from allowed origins
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
   }
+
   res.header(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
+
+  // Handle preflight requests
   if (req.method === "OPTIONS") {
     res.header(
       "Access-Control-Allow-Methods",
-      "GET, POST, PUT, PATCH, DELETE"
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     );
     return res.sendStatus(200);
   }
+
   next();
 });
 
