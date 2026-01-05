@@ -10,55 +10,59 @@ dotenv.config();
 
 const app = express();
 
-// CORS
-app.use(
-  cors({
-    origin: ["https://wind-ebon.vercel.app", "http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+// -------------------- CORS --------------------
+const allowedOrigins = [
+  "http://localhost:5173",          // Local development
+  "https://wind-ebon.vercel.app"   // Production frontend
+];
 
-// Body parser
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// -------------------- BODY PARSER --------------------
 app.use(express.json());
 
-// -----------------------------
-// MongoDB connection (Vercel-safe)
+// -------------------- MONGO DB CONNECTION --------------------
 let cached = global.mongoose;
-if (!cached) cached = global.mongoose = { conn: null, promise: null };
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 async function connectToDB() {
   if (cached.conn) return cached.conn;
+
   if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      })
-      .then((mongoose) => mongoose);
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }).then((m) => m);
   }
+
   cached.conn = await cached.promise;
   return cached.conn;
 }
 
-// Middleware to ensure DB is connected for every request
-app.use(async (req, res, next) => {
-  try {
-    await connectToDB();
-    next();
-  } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
-    return res.status(500).json({ message: "Database connection failed", error: err.message });
-  }
-});
+connectToDB()
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Routes
+// -------------------- ROUTES --------------------
 app.use("/api/contact", contactRoutes);
 app.use("/api/blogs", blogRoutes);
 
-// Test endpoint
-app.get("/", (req, res) => {
-  res.json({ success: true, message: "OTAN backend running 🚀" });
-});
+// -------------------- TEST ENDPOINT --------------------
+app.get("/", (req, res) =>
+  res.json({ success: true, message: "OTAN backend running 🚀" })
+);
 
 export default app;
