@@ -28,6 +28,7 @@ if (!cached) cached = global.mongoose = { conn: null, promise: null };
 
 async function connectToDB() {
   if (cached.conn) return cached.conn;
+
   if (!cached.promise) {
     cached.promise = mongoose
       .connect(process.env.MONGO_URI, {
@@ -36,6 +37,7 @@ async function connectToDB() {
       })
       .then((m) => m);
   }
+
   cached.conn = await cached.promise;
   return cached.conn;
 }
@@ -52,11 +54,8 @@ app.get("/", (req, res) =>
 /* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
 export default async function handler(req, res) {
   try {
-    // Ensure DB connected before handling any request
-    await connectToDB();
-
-    // Handle request via Express app
-    app(req, res);
+    await connectToDB(); // Ensure MongoDB is connected
+    app(req, res);        // Pass request to Express
   } catch (err) {
     console.error("❌ Serverless function error:", err.message);
     res.status(500).json({ message: "Server error", error: err.message });
