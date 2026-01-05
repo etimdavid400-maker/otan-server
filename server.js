@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import contactRoutes from "./routes/contactRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
@@ -21,6 +23,14 @@ app.use(
 
 /* -------------------- BODY PARSER -------------------- */
 app.use(express.json());
+
+/* -------------------- __dirname fix for ES modules -------------------- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/* -------------------- STATIC FILES -------------------- */
+// Serve /public folder (for images, etc.)
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* -------------------- MONGODB CONNECTION (CACHED) -------------------- */
 let cached = global.mongoose;
