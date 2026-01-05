@@ -2,8 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
 
 import contactRoutes from "./routes/contactRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
@@ -24,21 +22,12 @@ app.use(
 /* -------------------- BODY PARSER -------------------- */
 app.use(express.json());
 
-/* -------------------- __dirname fix for ES modules -------------------- */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-/* -------------------- STATIC FILES -------------------- */
-// Serve static /public folder inside server/
-app.use("/public", express.static(path.join(__dirname, "public")));
-
 /* -------------------- MONGODB CONNECTION (CACHED) -------------------- */
 let cached = global.mongoose;
 if (!cached) cached = global.mongoose = { conn: null, promise: null };
 
 async function connectToDB() {
   if (cached.conn) return cached.conn;
-
   if (!cached.promise) {
     cached.promise = mongoose
       .connect(process.env.MONGO_URI, {
@@ -47,7 +36,6 @@ async function connectToDB() {
       })
       .then((m) => m);
   }
-
   cached.conn = await cached.promise;
   return cached.conn;
 }
@@ -64,7 +52,7 @@ app.get("/", (req, res) =>
 /* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
 export default async function handler(req, res) {
   try {
-    await connectToDB(); // ensure DB connected per request
+    await connectToDB(); // ensure DB connected
     app(req, res); // pass request to Express
   } catch (err) {
     console.error("❌ Serverless function error:", err.message);
