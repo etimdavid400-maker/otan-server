@@ -1,18 +1,8 @@
-import mongoose from "mongoose";
 import Blog from "../models/blogModel.js";
 
-const connectToDB = async () => {
-  if (mongoose.connection.readyState === 1) return; // already connected
-  await mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-};
-
-// GET all blogs
+// -------------------- GET all blogs --------------------
 export const getBlogs = async (req, res) => {
   try {
-    await connectToDB();
     const blogs = await Blog.find().sort({ createdAt: -1 });
     res.status(200).json(blogs);
   } catch (err) {
@@ -21,17 +11,18 @@ export const getBlogs = async (req, res) => {
   }
 };
 
-// POST new blog
+// -------------------- POST new blog --------------------
 export const createBlog = async (req, res) => {
   try {
-    await connectToDB();
     const { title, content, link, selectedImage } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({ message: "Title and content are required" });
     }
 
-    const imageUrl = selectedImage ? selectedImage.replace(/^\/+/, "") : "";
+    const imageUrl = selectedImage
+      ? selectedImage.replace(/^\/+/, "")
+      : "";
 
     const blog = await Blog.create({
       title,
@@ -47,14 +38,82 @@ export const createBlog = async (req, res) => {
   }
 };
 
-// DELETE blog
+// -------------------- DELETE blog --------------------
 export const deleteBlog = async (req, res) => {
   try {
-    await connectToDB();
-    await Blog.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Blog deleted" });
+    const blog = await Blog.findById(req.params.id);
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    await blog.deleteOne();
+    res.status(200).json({ message: "Blog deleted successfully" });
   } catch (err) {
     console.error("Blog delete error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// -------------------- UPDATE blog --------------------
+export const updateBlog = async (req, res) => {
+  try {
+    const { title, content, link, selectedImage } = req.body;
+
+    const blog = await Blog.findById(req.params.id);
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    // Update only the provided fields
+    if (title) blog.title = title;
+    if (content) blog.content = content;
+    if (link !== undefined) blog.link = link;
+    if (selectedImage) blog.image = selectedImage.replace(/^\/+/, "");
+
+    await blog.save();
+
+    res.status(200).json({ message: "Blog updated successfully", blog });
+  } catch (err) {
+    console.error("Blog update error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// NEW: handle update submit
+const handleUpdateSubmit = async (e) => {
+  e.preventDefault();
+  setMessage("");
+  setError("");
+
+  if (!editTitle || !editContent)
+    return setError("Title and content are required.");
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/blogs/${editingBlogId}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          link: editLink,
+          selectedImage: editSelectedImage,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message || "Failed to update blog");
+
+    setMessage("Blog updated successfully!");
+    handleCancelEdit(); // Reset edit form
+    fetchBlogs(); // Refresh blog list
+  } catch (err) {
+    console.error(err);
+    setError(err.message || "Server error. Try again later.");
   }
 };
