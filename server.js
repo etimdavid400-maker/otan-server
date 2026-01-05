@@ -1,38 +1,69 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { connectDB } from "./config/db.js";
 
-import blogRoutes from "./routes/blogRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import blogRoutes from "./routes/blogRoutes.js";
 
-dotenv.config();
+dotenv.config(); // ✅ Keep this at top
 
 const app = express();
+
+/* -------------------- BODY PARSER -------------------- */
 app.use(express.json());
 
-// -------------------- Logger --------------------
+/* -------------------- CORS (YOURS, KEPT) -------------------- */
+const allowedOrigins = [
+  "https://wind-ebon.vercel.app",
+  "http://localhost:5173",
+];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+
+  if (req.method === "OPTIONS") {
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE"
+    );
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+/* -------------------- REQUEST LOGGING -------------------- */
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.url}`);
   next();
 });
 
-// -------------------- MongoDB --------------------
-if (!mongoose.connection.readyState) {
-  mongoose
-    .connect(process.env.MONGO_URI || process.env.MONGODB_URI)
-    .then(() => console.log("✅ MongoDB connected"))
-    .catch((err) => console.error("❌ MongoDB error:", err));
+/* -------------------- DB CONNECT (VERCEL SAFE) -------------------- */
+try {
+  await connectDB(process.env.MONGO_URI);
+} catch (error) {
+  console.error("❌ Failed to connect to MongoDB:", error.message);
+  process.exit(1); // Stop server if DB connection fails
 }
 
-// -------------------- Routes --------------------
-app.use("/api/blogs", blogRoutes);
+/* -------------------- ROUTES -------------------- */
 app.use("/api/contact", contactRoutes);
+app.use("/api/blogs", blogRoutes);
 
-// -------------------- Test --------------------
+/* -------------------- TEST ROUTE -------------------- */
 app.get("/api/test", (req, res) => {
+  console.log("✅ Test route hit");
   res.json({ success: true, message: "OTAN backend running 🚀" });
 });
 
-// ❌ NO app.listen()
-// ✅ EXPORT for Vercel
+/* -------------------- EXPORT (NO app.listen) -------------------- */
 export default app;
