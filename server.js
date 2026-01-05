@@ -29,14 +29,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* -------------------- STATIC FILES -------------------- */
+// Serve static /public folder inside server/
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 /* -------------------- MONGODB CONNECTION (CACHED) -------------------- */
 let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+if (!cached) cached = global.mongoose = { conn: null, promise: null };
 
 async function connectToDB() {
   if (cached.conn) return cached.conn;
