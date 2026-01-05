@@ -82,38 +82,49 @@ export const updateBlog = async (req, res) => {
 };
 
 // NEW: handle update submit
-const handleUpdateSubmit = async (e) => {
-  e.preventDefault();
+// -------------------- UPDATE blog --------------------
+const handleUpdate = async (id) => {
   setMessage("");
   setError("");
 
-  if (!editTitle || !editContent)
-    return setError("Title and content are required.");
+  if (!editTitle || !editContent) {
+    return setError("Title and content are required for update.");
+  }
+
+  // Prepare data matching backend keys
+  const updateData = {
+    title: editTitle,
+    content: editContent,
+    link: editLink,
+    // store only relative path, avoid double URLs
+    selectedImage: editSelectedImage.replace(`${import.meta.env.VITE_API_URL}/public/`, "")
+  };
 
   try {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/blogs/${editingBlogId}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: editTitle,
-          content: editContent,
-          link: editLink,
-          selectedImage: editSelectedImage,
-        }),
-      }
-    );
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updateData)
+    });
 
     const data = await res.json();
 
-    if (!res.ok) throw new Error(data.message || "Failed to update blog");
+    if (!res.ok) {
+      setError(data.message || "Failed to update blog.");
+    } else {
+      setMessage("Blog updated successfully!");
+      setEditBlogId(null); // exit editing mode
+      setEditTitle("");
+      setEditContent("");
+      setEditLink("");
+      setEditSelectedImage(`${import.meta.env.VITE_API_URL}/public/image1.jpg`);
 
-    setMessage("Blog updated successfully!");
-    handleCancelEdit(); // Reset edit form
-    fetchBlogs(); // Refresh blog list
+      // Refresh blog list
+      fetchBlogs();
+    }
   } catch (err) {
-    console.error(err);
-    setError(err.message || "Server error. Try again later.");
+    console.error("Blog update error:", err);
+    setError("Server error. Try again later.");
   }
 };
+
