@@ -52,8 +52,11 @@ app.get("/", (req, res) =>
 /* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
 export default async function handler(req, res) {
   try {
-    await connectToDB(); // ensure DB connected
-    app(req, res); // pass request to Express
+    // Ensure DB connected before handling any request
+    await connectToDB();
+
+    // Handle request via Express app
+    app(req, res);
   } catch (err) {
     console.error("❌ Serverless function error:", err.message);
     res.status(500).json({ message: "Server error", error: err.message });
