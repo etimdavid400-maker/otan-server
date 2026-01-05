@@ -20,10 +20,9 @@ export const createBlog = async (req, res) => {
       return res.status(400).json({ message: "Title and content are required" });
     }
 
-    // Ensure the image is saved with full public URL
     const imageUrl = selectedImage
-      ? `https://otan-server.vercel.app/blog-images/${selectedImage.replace(/^\/+/, "")}`
-      : ""; // fallback empty string
+      ? selectedImage.replace(/^\/+/, "")
+      : "";
 
     const blog = await Blog.create({
       title,
