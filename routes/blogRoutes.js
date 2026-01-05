@@ -14,13 +14,6 @@ router.post("/", createBlog);
 router.delete("/:id", deleteBlog);
 router.put("/:id", updateBlog); // ✅ KEEP THIS
 
-/* -------------------- CATCH ALL INVALID METHODS -------------------- */
-router.all("/:path*", (req, res) => {
-  res.status(405).json({
-    message: "Invalid method or route for /api/blogs",
-    method: req.method,
-    path: req.originalUrl
-  });
-});
+// Catch-all removed to prevent path-to-regexp errors
 
 export default router;
