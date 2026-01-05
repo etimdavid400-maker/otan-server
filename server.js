@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import contactRoutes from "./routes/contactRoutes.js";
-import blogRoutes from "./routes/blogRoutes.js"; // <-- added blog routes
+import blogRoutes from "./routes/blogRoutes.js";
 
 dotenv.config();
 
@@ -31,15 +31,39 @@ const __dirname = path.dirname(__filename);
 // Serve static public folder
 app.use("/public", express.static(path.join(__dirname, "public")));
 
-// MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI)
+// -----------------------------
+// MongoDB connection (Vercel-friendly)
+// -----------------------------
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectToDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }).then((m) => m);
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+// Connect once at startup
+connectToDB()
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
+// -----------------------------
 // Routes
+// -----------------------------
 app.use("/api/contact", contactRoutes);
-app.use("/api/blogs", blogRoutes); // <-- added blog API route
+app.use("/api/blogs", blogRoutes);
 
 // Test endpoint
 app.get("/", (req, res) =>
