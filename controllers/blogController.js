@@ -36,21 +36,3 @@ export const deleteBlog = async (req, res) => {
     res.status(500).json({ message: "Failed to delete blog", error: error.message });
   }
 };
-
-/* -------------------- UPDATE BLOG -------------------- */
-export const updateBlog = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-
-    // Remove image field if present
-    if ("image" in updates) delete updates.image;
-
-    const updated = await Blog.findByIdAndUpdate(id, updates, { new: true });
-    if (!updated) return res.status(404).json({ message: "Blog not found" });
-    res.status(200).json(updated);
-  } catch (error) {
-    console.error("❌ Error updating blog:", error.message);
-    res.status(500).json({ message: "Failed to update blog", error: error.message });
-  }
-};
