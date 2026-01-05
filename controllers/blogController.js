@@ -6,8 +6,8 @@ export const getBlogs = async (req, res) => {
     const blogs = await Blog.find().sort({ createdAt: -1 });
     res.status(200).json(blogs);
   } catch (err) {
-    console.error("Blog fetch error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Blog fetch error:", err); // log full error
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -34,17 +34,27 @@ export const createBlog = async (req, res) => {
     res.status(201).json({ message: "Blog created successfully", blog });
   } catch (err) {
     console.error("Blog create error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
 // DELETE blog
-export const deleteBlog = async (req, res) => {
+const handleDelete = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this blog?")) return;
+
   try {
-    await Blog.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Blog deleted" });
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/blogs/${id}`, {
+      method: "DELETE",
+    });
+    const data = await res.json(); // get server message
+    if (!res.ok) throw new Error(data.message || "Failed to delete blog");
+
+    setBlogs(blogs.filter((b) => b._id !== id)); // Remove from state
+    setMessage(data.message || "Blog deleted successfully!");
+    setError(""); // clear any previous error
   } catch (err) {
-    console.error("Blog delete error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error(err);
+    setError(err.message || "Failed to delete blog.");
+    setMessage(""); // clear any previous success message
   }
 };
