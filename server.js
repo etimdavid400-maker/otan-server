@@ -3,19 +3,18 @@ import { connectDB } from "./config/db.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 
-/* -------------------- APP FACTORY -------------------- */
-const createApp = async () => {
+/* -------------------- APP CREATION -------------------- */
+const createApp = () => {
   const app = express();
 
-  /* -------------------- BODY PARSER -------------------- */
+  // Body parser
   app.use(express.json());
 
-  /* -------------------- CORS -------------------- */
+  // CORS
   const allowedOrigins = [
     "https://wind-ebon.vercel.app",
     "http://localhost:5173",
   ];
-
   app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (allowedOrigins.includes(origin)) {
@@ -35,17 +34,17 @@ const createApp = async () => {
     next();
   });
 
-  /* -------------------- REQUEST LOGGING -------------------- */
+  // Request logging
   app.use((req, res, next) => {
     console.log(`➡️ ${req.method} ${req.url}`);
     next();
   });
 
-  /* -------------------- ROUTES -------------------- */
+  // Routes
   app.use("/api/contact", contactRoutes);
   app.use("/api/blogs", blogRoutes);
 
-  /* -------------------- TEST ROUTE -------------------- */
+  // Test route
   app.get("/api/test", (req, res) => {
     console.log("✅ Test route hit");
     res.json({ success: true, message: "OTAN backend running 🚀" });
@@ -54,7 +53,7 @@ const createApp = async () => {
   return app;
 };
 
-/* -------------------- VERCEL SERVERLESS EXPORT -------------------- */
+/* -------------------- VERCEL SERVERLESS HANDLER -------------------- */
 let cachedApp = null;
 
 export default async function handler(req, res) {
@@ -62,9 +61,9 @@ export default async function handler(req, res) {
     // Connect to MongoDB (cached)
     await connectDB(process.env.MONGO_URI);
 
-    // Initialize app once
+    // Initialize Express app once
     if (!cachedApp) {
-      cachedApp = await createApp();
+      cachedApp = createApp();
     }
 
     cachedApp(req, res); // Pass request to Express
