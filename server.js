@@ -12,9 +12,9 @@ const app = express();
 
 // -------------------- CORS --------------------
 const allowedOrigins = [
-  "http://localhost:5173",          // Local development
-  "https://www.otan.org.ng",    // Production frontend
-  "https://wind-ebon.vercel.app"   // Production frontend
+  "http://localhost:5173",          // Local dev
+  "https://www.otan.org.ng",        // Prod frontend
+  "https://wind-ebon.vercel.app"    // Prod frontend
 ];
 
 app.use(cors({
@@ -39,23 +39,20 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-async function connectToDB() {
+export async function connectToDB() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      bufferCommands: false, // Important for serverless
     }).then((m) => m);
   }
 
   cached.conn = await cached.promise;
   return cached.conn;
 }
-
-connectToDB()
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // -------------------- ROUTES --------------------
 app.use("/api/contact", contactRoutes);
