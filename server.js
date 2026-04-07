@@ -12,6 +12,7 @@ const app = express();
 
 // -------------------- CORS --------------------
 const allowedOrigins = [
+  "https://otan.org.ng",        // Prod frontend
   "http://localhost:5173",          // Local dev
   "https://www.otan.org.ng",        // Prod frontend
   "https://wind-ebon.vercel.app"    // Prod frontend
